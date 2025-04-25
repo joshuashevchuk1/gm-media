@@ -619,7 +619,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
   }
 
 
-  private async startRealtimeAiApiSession() {
+  public async startRealtimeAiApiSession() {
     console.log('Action triggered for "Hello" command');
     // Implement your specific action here
     let emp_token = await this.getEmpToken()
