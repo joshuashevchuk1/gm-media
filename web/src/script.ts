@@ -35,6 +35,13 @@ async function handleSessionChange(status: MeetSessionStatus) {
       console.log('Received response: ', response);
       await client.injectAudioOnceFromPath('./ping.m4a'); // Add this line
       console.log('should have injected audio');
+      try {
+        console.log('Piping out audio: ');
+        await client.sendAudioToWebSocket();
+        console.log('Audio piped out successfully.');
+      } catch (error) {
+        console.error('Failed to pipe out audio:', error);
+      }
       break;
     case MeetSessionStatus.DISCONNECTED:
       statusString = 'DISCONNECTED';
@@ -132,24 +139,6 @@ function handleStreamChange(meetStreamTracks: MeetStreamTrack[]) {
       trackIdToElementId.set(meetStreamTrack.mediaStreamTrack.id, audioId);
     }
   });
-
-  try {
-    console.log('Piping out audio: ');
-    const webSocketUrl = 'ws://localhost:8765';
-
-    if (!Array.isArray(meetStreamTracks) || meetStreamTracks.length < 2 || !meetStreamTracks.at(1)) {
-      throw new Error('Invalid or insufficient meetStreamTracks: cannot access track at index 1.');
-    }
-
-    // @ts-ignore
-    const botTrack = meetStreamTracks.at(1).mediaStreamTrack;
-    client.pipeRemoteAudioToWebSocket(webSocketUrl, botTrack);
-    console.log('Audio piped out successfully.');
-  } catch (error) {
-    console.error('Failed to pipe out audio:', error);
-  }
-
-
 
   // Set local set of tracks to top level available id collections.
   availableVideoIds = [...localAvailableVideoIds];
