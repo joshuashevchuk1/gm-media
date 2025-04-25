@@ -152,6 +152,7 @@ export class MediaStatsChannelHandler {
         if (this.intervalId) {
           clearInterval(this.intervalId);
         }
+        // @ts-ignore
         this.intervalId = setInterval(
           this.sendMediaStats.bind(this),
           resource.configuration.uploadIntervalSeconds * 1000,
