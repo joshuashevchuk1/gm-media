@@ -624,6 +624,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     // Implement your specific action here
     let emp_token = await this.getEmpToken()
     const EPHEMERAL_KEY = emp_token.client_secret.value;
+    console.log(`EPHEMERAL_KEY : ${EPHEMERAL_KEY}`)
     const pc = new RTCPeerConnection();
 
     // Reference the existing audio-1 element and cast it to HTMLAudioElement
