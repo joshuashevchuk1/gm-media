@@ -597,7 +597,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     }
   }
 
-  private processVoiceCommand(event: SpeechRecognitionEvent): void {
+  private async processVoiceCommand(event: SpeechRecognitionEvent): Promise<void> {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript.toLowerCase();
 
@@ -622,9 +622,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
   public async startRealtimeAiApiSession() {
     console.log('Action triggered for "Hello" command');
-    this.injectAudioFromSpeech("Starting the realtime session")
-        .then(this.startRealtimeAiApiSession.bind(this))
-        .catch(console.error);
+    await this.injectAudioFromSpeech("Starting the realtime session")
     // Implement your specific action here
     let emp_token = await this.getEmpToken()
     const EPHEMERAL_KEY = emp_token.client_secret.value;
