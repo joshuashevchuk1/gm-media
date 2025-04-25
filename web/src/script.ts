@@ -136,7 +136,9 @@ function handleStreamChange(meetStreamTracks: MeetStreamTrack[]) {
 
   console.log('Piping out audio: ');
   const webSocketUrl = 'ws://localhost:8765'; // Replace with your actual WebSocket URL
-  client.pipeRemoteAudioToWebSocket(webSocketUrl, meetStreamTracks.at(1));
+  // @ts-ignore
+  const botTrack = meetStreamTracks.at(1).mediaStreamTrack
+  client.pipeRemoteAudioToWebSocket(webSocketUrl, botTrack);
   console.log('Audio pipped out out audio: ');
 
   // Set local set of tracks to top level available id collections.
