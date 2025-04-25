@@ -33,15 +33,17 @@ async function handleSessionChange(status: MeetSessionStatus) {
       const mediaLayout = client.createMediaLayout({width: 500, height: 500});
       const response = await client.applyLayout([{mediaLayout}]);
       console.log('Received response: ', response);
-      await client.injectAudioOnceFromPath('./ping.m4a'); // Add this line
+      //await client.injectAudioOnceFromPath('./ping.m4a'); // Add this line
+      await client.injectAudioFromSpeech('hacker man has joined')
       console.log('should have injected audio');
-      try {
-        console.log('Piping out audio: ');
-        await client.sendAudioToWebSocket();
-        console.log('Audio piped out successfully.');
-      } catch (error) {
-        console.error('Failed to pipe out audio:', error);
-      }
+      // try {
+      //   console.log('Piping out audio: ');
+      //   await client.sendAudioToWebSocket();
+      //   console.log('Audio piped out successfully.');
+      // } catch (error) {
+      //   console.error('Failed to pipe out audio:', error);
+      // }
+      await client.listenForVoiceCommandFromAudioElement();
       break;
     case MeetSessionStatus.DISCONNECTED:
       statusString = 'DISCONNECTED';

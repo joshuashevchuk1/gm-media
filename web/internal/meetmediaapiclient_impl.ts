@@ -520,11 +520,13 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
     if (audioElement) {
       // Ensure the audio is playing before starting the voice detection
+      console.log("audio element loaded");
       if (!audioElement.paused) {
         console.log('Listening for voice commands while audio is playing...');
 
         // Check if SpeechRecognition is available
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+          console.log("speechRecognition available");
           const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
           recognition.lang = 'en-US'; // Set the language for recognition
           recognition.continuous = true; // Keep recognition running
@@ -558,12 +560,15 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
       // Detect specific voice commands
       if (transcript.includes('hey hackerman')) {
+        console.log("got voice command");
+        console.log('Voice command detected: hey hackerman');
         const response = 'Hackerman is online'
-        this.injectAudioFromSpeech(response)
+        this.injectAudioFromSpeech(response);
         this.triggerHelloAction();
       }
 
       if (transcript.includes('start')) {
+        console.log("got voice command");
         console.log('Voice command detected: Start');
         this.triggerStartAction();
       }
@@ -580,42 +585,6 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
   private triggerStartAction() {
     console.log('Action triggered for "Start" command');
     // Implement your specific action here
-  }
-
-
-  public async injectAudioOnceFromPath(relativePath: string): Promise<void> {
-    console.log("Entering injectAudioOnceFromPath");
-
-    const audioContext = new AudioContext();
-
-    const response = await fetch(relativePath);
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-
-    const destination = audioContext.createMediaStreamDestination();
-    source.connect(destination);
-    source.start(0);
-
-    const [track] = destination.stream.getAudioTracks();
-    this.peerConnection.addTrack(track, destination.stream);
-
-    // 🔊 Play audio locally on <audio id="audio-1">
-    const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
-    if (audioElement) {
-      audioElement.srcObject = destination.stream;
-      audioElement.autoplay = true;
-      audioElement.muted = false;
-      audioElement.play().catch((err) =>
-          console.error("Failed to play audio-1:", err)
-      );
-    } else {
-      console.warn("Element with id 'audio-1' not found");
-    }
-
-    console.log("Leaving injectAudioOnceFromPath");
   }
 
   public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 1, pitch: number = 1): Promise<void> {
@@ -680,6 +649,41 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     console.log("Leaving injectAudioFromSpeech");
   }
 
+
+  public async injectAudioOnceFromPath(relativePath: string): Promise<void> {
+    console.log("Entering injectAudioOnceFromPath");
+
+    const audioContext = new AudioContext();
+
+    const response = await fetch(relativePath);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+
+    const destination = audioContext.createMediaStreamDestination();
+    source.connect(destination);
+    source.start(0);
+
+    const [track] = destination.stream.getAudioTracks();
+    this.peerConnection.addTrack(track, destination.stream);
+
+    // 🔊 Play audio locally on <audio id="audio-1">
+    const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
+    if (audioElement) {
+      audioElement.srcObject = destination.stream;
+      audioElement.autoplay = true;
+      audioElement.muted = false;
+      audioElement.play().catch((err) =>
+          console.error("Failed to play audio-1:", err)
+      );
+    } else {
+      console.warn("Element with id 'audio-1' not found");
+    }
+
+    console.log("Leaving injectAudioOnceFromPath");
+  }
 
   public async sendAudioToWebSocket() {
     const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
