@@ -605,9 +605,10 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
       if (transcript.includes('hey hackerman')) {
         console.log("got voice command");
         console.log('Voice command detected: hey hackerman');
-        const response = 'Hackerman is online'
-        this.injectAudioFromSpeech(response);
-        this.startRealtimeAiApiSession();
+        const response = 'This is hackerman'
+        this.injectAudioFromSpeech(response)
+            .then(this.startRealtimeAiApiSession.bind(this))
+            .catch(console.error);
       }
 
       if (transcript.includes('start')) {
@@ -621,6 +622,9 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
   public async startRealtimeAiApiSession() {
     console.log('Action triggered for "Hello" command');
+    this.injectAudioFromSpeech("Starting the realtime session")
+        .then(this.startRealtimeAiApiSession.bind(this))
+        .catch(console.error);
     // Implement your specific action here
     let emp_token = await this.getEmpToken()
     const EPHEMERAL_KEY = emp_token.client_secret.value;
@@ -720,7 +724,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     console.log("Leaving injectAudioOnceFromPath");
   }
 
-  public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 1, pitch: number = 1): Promise<void> {
+  public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 0.5, pitch: number = 1): Promise<void> {
     console.log("Entering injectAudioFromSpeech");
 
     // Create a new SpeechSynthesisUtterance object for the provided text
@@ -740,9 +744,6 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
     // Create an AudioNode that will play the speech
     const source = audioContext.createBufferSource();
-
-    // Use the SpeechSynthesis API to speak the text and create a stream
-    const audioStream = new MediaStream();
 
     // When the utterance is spoken, route the audio into the stream
     utterance.onstart = () => {
