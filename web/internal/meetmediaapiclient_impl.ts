@@ -623,7 +623,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     console.log('Action triggered for "Hello" command');
     // Implement your specific action here
     let emp_token = await this.getEmpToken()
-    const EPHEMERAL_KEY = emp_token
+    const EPHEMERAL_KEY = emp_token.client_secret.value;
     const pc = new RTCPeerConnection();
 
     // Reference the existing audio-1 element and cast it to HTMLAudioElement
