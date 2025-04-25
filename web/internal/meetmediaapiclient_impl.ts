@@ -607,7 +607,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
         console.log('Voice command detected: hey hackerman');
         const response = 'Hackerman is online'
         this.injectAudioFromSpeech(response);
-        this.triggerHelloAction();
+        this.startRealtimeAiApiSession();
       }
 
       if (transcript.includes('start')) {
@@ -619,11 +619,68 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
   }
 
 
-// Example action triggered by voice command
-  private triggerHelloAction() {
+  private async startRealtimeAiApiSession() {
     console.log('Action triggered for "Hello" command');
     // Implement your specific action here
+    let emp_token = await this.getEmpToken()
+    const EPHEMERAL_KEY = emp_token
+    const pc = new RTCPeerConnection();
+
+    // Reference the existing audio-1 element and cast it to HTMLAudioElement
+    const audioEl = document.getElementById("audio-1") as HTMLAudioElement;
+    if (!audioEl) {
+      console.error("Audio element not found!");
+      return;
+    }
+
+    // Set up to play remote audio from the model
+    pc.ontrack = e => {
+      audioEl.srcObject = e.streams[0]; // Play the incoming stream to the audio-1 element
+    };
+
+    // Add local audio track for microphone input in the browser
+    const ms = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    });
+
+    // Connect the microphone stream to the audio-1 element (if desired)
+    audioEl.srcObject = ms;
+
+    // Add the microphone track to the peer connection
+    pc.addTrack(ms.getTracks()[0]);
+
+    // Set up data channel for sending and receiving events
+    const dc = pc.createDataChannel("oai-events");
+    dc.addEventListener("message", (e) => {
+      // Realtime server events appear here!
+      console.log(e);
+    });
+
+    // Start the session using the Session Description Protocol (SDP)
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    const baseUrl = "https://api.openai.com/v1/realtime";
+    const model = "gpt-4o-realtime-preview-2024-12-17";
+    const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+      method: "POST",
+      body: offer.sdp,
+      headers: {
+        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+        "Content-Type": "application/sdp"
+      },
+    });
+
+    const answer: RTCSessionDescriptionInit = {
+      type: "answer",
+      sdp: await sdpResponse.text(),
+    };
+
+    await pc.setRemoteDescription(answer);
   }
+
+
+
 
   private triggerStartAction() {
     console.log('Action triggered for "Start" command');
@@ -789,6 +846,37 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     this._audioWebSocket = socket;
     this._audioProcessor = processor;
     this._audioContext = audioContext;
+  }
+
+  public async getEmpToken() {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is missing');
+    }
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-realtime-preview-2024-12-17",
+          voice: "verse",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data; // Handle the response data as needed
+
+    } catch (error) {
+      console.error('Error during session start:', error);
+      throw error; // Re-throw the error if needed for further handling
+    }
   }
 }
 
