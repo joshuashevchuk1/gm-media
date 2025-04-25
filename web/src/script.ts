@@ -66,7 +66,6 @@ const trackIdToElementId = new Map<string, number>();
 function handleStreamChange(meetStreamTracks: MeetStreamTrack[]) {
   const client = (window as any).client; // Access client from the global window object
 
-  // Now you can use 'client' in your function
   if (!client) {
     console.error('Client not found');
     return;
