@@ -15,7 +15,7 @@
  */
 
 /**
- * @fileoverview Entry to src server
+ * @fileoverview Entry to samples server
  */
 const express = require('express');
 const path = require('path');

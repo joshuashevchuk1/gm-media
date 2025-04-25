@@ -14,23 +14,21 @@
 
 load("//:build_defs.bzl", "ts_library")
 
-package(default_visibility = ["@media_api_samples//web:__subpackages__"])
+_CONTENT = [
+    "server.js",
+    "webpack.config.js",
+]
+
+filegroup(
+    name = "nodejs_server_files",
+    srcs = _CONTENT,
+)
 
 ts_library(
-    name = "channel_handlers",
-    srcs = [
-        "channel_logger.ts",
-        "media_entries_channel_handler.ts",
-        "media_stats_channel_handler.ts",
-        "participants_channel_handler.ts",
-        "session_control_channel_handler.ts",
-        "video_assignment_channel_handler.ts",
-    ],
+    name = "script",
+    srcs = ["script.ts"],
     deps = [
-        "@media_api_samples//web/internal:internal_types",
-        "@media_api_samples//web/internal:subscribable_impl",
-        "@media_api_samples//web/internal:utils",
-        "@media_api_samples//web/types:datachannels",
+        "@media_api_samples//web/internal:meetmediaapiclient_impl",
         "@media_api_samples//web/types:enums",
         "@media_api_samples//web/types:media_types",
     ],

@@ -29,19 +29,14 @@ export enum LogLevel {
   MESSAGES = 3,
 }
 
-/** Connection state of the Meet Media API session. */
-export enum MeetConnectionState {
-  UNKNOWN = 0,
+/**
+ * Enum for the status of the Meet session.
+ */
+export enum MeetSessionStatus {
+  NEW = 0 /* Default value */,
   WAITING = 1,
   JOINED = 2,
   DISCONNECTED = 3,
-}
-
-/** Reasons for the Meet Media API session to disconnect. */
-export enum MeetDisconnectReason {
-  UNKNOWN = 0,
-  CLIENT_LEFT = 1,
-  USER_STOPPED = 2,
-  CONFERENCE_ENDED = 3,
-  SESSION_UNHEALTHY = 4,
+  KICKED = 4 /* DISCONNECTED with leave request */,
+  REJECTED = 5 /* Error state */,
 }
