@@ -466,6 +466,8 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     return mediaLayout;
   }
 
+
+
   public async injectAudioOnceFromPath(relativePath: string): Promise<void> {
     console.log("Entering injectAudioOnceFromPath");
 
@@ -499,6 +501,45 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     }
 
     console.log("Leaving injectAudioOnceFromPath");
+  }
+
+  public async sendAudioToWebSocket() {
+    const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
+
+    if (audioElement && audioElement.srcObject) {
+      // Get the MediaStream from the audio element
+      const mediaStream = audioElement.srcObject as MediaStream;
+
+      // Log the MediaStream and its audio tracks to ensure valid tracks are present
+      console.log("MediaStream:", mediaStream);
+      console.log("Audio Tracks:", mediaStream.getAudioTracks());
+
+      // Now, pipe it to the WebSocket
+      const webSocketUrl = 'ws://localhost:8765'; // Change this to your WebSocket URL
+      const client = (window as any).client; // Ensure the client is available
+
+      if (client) {
+        try {
+          console.log('Piping audio to WebSocket...');
+
+          // Ensure that pipeRemoteAudioToWebSocket is not recursively called
+          if (this._audioWebSocket) {
+            console.warn("WebSocket already connected, not re-initiating.");
+            return;
+          }
+
+          // Call the pipeRemoteAudioToWebSocket function to send the audio
+          await client.pipeRemoteAudioToWebSocket(webSocketUrl, mediaStream);
+          console.log('Audio from audio-1 successfully piped to WebSocket');
+        } catch (error) {
+          console.error('Failed to pipe audio:', error);
+        }
+      } else {
+        console.error('Client not found');
+      }
+    } else {
+      console.error('Audio element or srcObject not found');
+    }
   }
 
   public async pipeRemoteAudioToWebSocket(webSocketUrl: string, remoteMediaStream: MediaStream) {

@@ -32,9 +32,16 @@ async function handleSessionChange(status: MeetSessionStatus) {
       const client = (window as any).client;
       const mediaLayout = client.createMediaLayout({width: 500, height: 500});
       const response = await client.applyLayout([{mediaLayout}]);
-      //console.log('Received response: ', response);
-      //await client.injectAudioOnceFromPath('./test.m4a'); // Add this line
-      //console.log('should have injected audio');
+      console.log('Received response: ', response);
+      await client.injectAudioOnceFromPath('./ping.m4a'); // Add this line
+      console.log('should have injected audio');
+      try {
+        console.log('Piping out audio: ');
+        await client.sendAudioToWebSocket();
+        console.log('Audio piped out successfully.');
+      } catch (error) {
+        console.error('Failed to pipe out audio:', error);
+      }
       break;
     case MeetSessionStatus.DISCONNECTED:
       statusString = 'DISCONNECTED';
@@ -66,7 +73,6 @@ const trackIdToElementId = new Map<string, number>();
 function handleStreamChange(meetStreamTracks: MeetStreamTrack[]) {
   const client = (window as any).client; // Access client from the global window object
 
-  // Now you can use 'client' in your function
   if (!client) {
     console.error('Client not found');
     return;
@@ -133,13 +139,6 @@ function handleStreamChange(meetStreamTracks: MeetStreamTrack[]) {
       trackIdToElementId.set(meetStreamTrack.mediaStreamTrack.id, audioId);
     }
   });
-
-  console.log('Piping out audio: ');
-  const webSocketUrl = 'ws://localhost:8765'; // Replace with your actual WebSocket URL
-  // @ts-ignore
-  const botTrack = meetStreamTracks.at(1).mediaStreamTrack
-  client.pipeRemoteAudioToWebSocket(webSocketUrl, botTrack);
-  console.log('Audio pipped out out audio: ');
 
   // Set local set of tracks to top level available id collections.
   availableVideoIds = [...localAvailableVideoIds];
