@@ -633,7 +633,6 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
       return;
     }
 
-    // Set up to play remote audio from the model
     pc.ontrack = e => {
       audioEl.srcObject = e.streams[0]; // Play the incoming stream to the audio-1 element
     };
@@ -643,10 +642,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
       audio: true
     });
 
-    // Connect the microphone stream to the audio-1 element (if desired)
     audioEl.srcObject = ms;
-
-    // Add the microphone track to the peer connection
     pc.addTrack(ms.getTracks()[0]);
 
     // Set up data channel for sending and receiving events
