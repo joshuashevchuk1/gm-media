@@ -1,3 +1,5 @@
+// @ts-ignore
+
 /*
  * Copyright 2024 Google LLC
  *
@@ -13,6 +15,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// At the very top of your MeetMediaApiClientImpl.ts file
+
+// At the top of your MeetMediaApiClientImpl.ts file
+
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+
+  // Declaring SpeechRecognitionEvent and related types to prevent TS errors
+  interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList;
+    resultIndex: number;
+    interpretation?: string;  // Optional, depending on the browser support
+    emma?: string;  // Optional, depending on the browser support
+  }
+
+  interface SpeechRecognitionResultList {
+    // @ts-ignore
+    length: number;
+    item(index: number): SpeechRecognitionResult;
+    [index: number]: SpeechRecognitionResult;
+  }
+
+  interface SpeechRecognitionResult {
+    // @ts-ignore
+    isFinal: boolean;
+    // @ts-ignore
+    length: number;
+    item(index: number): SpeechRecognitionAlternative;
+    [index: number]: SpeechRecognitionAlternative;
+  }
+
+  interface SpeechRecognitionAlternative {
+    // @ts-ignore
+    transcript: string;
+    // @ts-ignore
+    confidence: number;
+  }
+}
+
+export {}; // Make sure to export to treat it as a module
+
 
 import {
   MediaApiCommunicationProtocol,
@@ -467,6 +514,74 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
   }
 
 
+  public async listenForVoiceCommandFromAudioElement(): Promise<void> {
+    // Get the audio element (audio-1)
+    const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
+
+    if (audioElement) {
+      // Ensure the audio is playing before starting the voice detection
+      if (!audioElement.paused) {
+        console.log('Listening for voice commands while audio is playing...');
+
+        // Check if SpeechRecognition is available
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+          const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+          recognition.lang = 'en-US'; // Set the language for recognition
+          recognition.continuous = true; // Keep recognition running
+          recognition.interimResults = true; // Get interim results while speaking
+
+          // Start listening for voice commands
+          recognition.start();
+
+          // Process results and detect specific commands
+          recognition.onresult = (event: SpeechRecognitionEvent) => {
+            this.processVoiceCommand(event);
+          };
+
+          recognition.onerror = (event: { error: any; }) => {
+            console.error('Speech recognition error: ', event.error);
+          };
+        } else {
+          console.warn('Speech Recognition API is not supported in this browser.');
+        }
+      } else {
+        console.warn('Audio is not playing, cannot listen for voice commands.');
+      }
+    } else {
+      console.warn('Element with id "audio-1" not found.');
+    }
+  }
+
+  private processVoiceCommand(event: SpeechRecognitionEvent): void {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript.toLowerCase();
+
+      // Detect specific voice commands
+      if (transcript.includes('hey hackerman')) {
+        const response = 'Hackerman is online'
+        this.injectAudioFromSpeech(response)
+        this.triggerHelloAction();
+      }
+
+      if (transcript.includes('start')) {
+        console.log('Voice command detected: Start');
+        this.triggerStartAction();
+      }
+    }
+  }
+
+
+// Example action triggered by voice command
+  private triggerHelloAction() {
+    console.log('Action triggered for "Hello" command');
+    // Implement your specific action here
+  }
+
+  private triggerStartAction() {
+    console.log('Action triggered for "Start" command');
+    // Implement your specific action here
+  }
+
 
   public async injectAudioOnceFromPath(relativePath: string): Promise<void> {
     console.log("Entering injectAudioOnceFromPath");
@@ -502,6 +617,69 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
     console.log("Leaving injectAudioOnceFromPath");
   }
+
+  public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 1, pitch: number = 1): Promise<void> {
+    console.log("Entering injectAudioFromSpeech");
+
+    // Create a new SpeechSynthesisUtterance object for the provided text
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Set speech parameters (language, volume, rate, pitch)
+    utterance.lang = language;
+    utterance.volume = volume; // 0 to 1
+    utterance.rate = rate; // 0.1 to 10
+    utterance.pitch = pitch; // 0 to 2
+
+    // Create an AudioContext
+    const audioContext = new AudioContext();
+
+    // Create a MediaStreamDestination (to route the speech audio to a MediaStream)
+    const destination = audioContext.createMediaStreamDestination();
+
+    // Create an AudioNode that will play the speech
+    const source = audioContext.createBufferSource();
+
+    // Use the SpeechSynthesis API to speak the text and create a stream
+    const audioStream = new MediaStream();
+
+    // When the utterance is spoken, route the audio into the stream
+    utterance.onstart = () => {
+      console.log("Speech started");
+
+      // Create a new source node from the speech synthesis output and connect it to the MediaStream
+      source.connect(destination);
+      source.start();
+    };
+
+    // Handle the audio being played in the 'audio-1' element
+    utterance.onend = () => {
+      console.log("Speech finished");
+
+      // Add the stream from the destination to the 'audio-1' element
+      const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.srcObject = destination.stream;
+        audioElement.autoplay = true;
+        audioElement.muted = false;
+        audioElement.play().catch((err) =>
+            console.error("Failed to play speech audio in audio-1:", err)
+        );
+      } else {
+        console.warn("Element with id 'audio-1' not found");
+      }
+    };
+
+    // Error handling
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event.error);
+    };
+
+    // Speak the text (this will trigger the onstart and onend events)
+    window.speechSynthesis.speak(utterance);
+
+    console.log("Leaving injectAudioFromSpeech");
+  }
+
 
   public async sendAudioToWebSocket() {
     const audioElement = document.getElementById('audio-1') as HTMLAudioElement;
