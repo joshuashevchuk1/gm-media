@@ -597,7 +597,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     }
   }
 
-  private processVoiceCommand(event: SpeechRecognitionEvent): void {
+  private async processVoiceCommand(event: SpeechRecognitionEvent): Promise<void> {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript.toLowerCase();
 
@@ -605,9 +605,10 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
       if (transcript.includes('hey hackerman')) {
         console.log("got voice command");
         console.log('Voice command detected: hey hackerman');
-        const response = 'Hackerman is online'
-        this.injectAudioFromSpeech(response);
-        this.triggerHelloAction();
+        const response = 'This is hackerman'
+        this.injectAudioFromSpeech(response)
+            .then(this.startRealtimeAiApiSession.bind(this))
+            .catch(console.error);
       }
 
       if (transcript.includes('start')) {
@@ -619,11 +620,66 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
   }
 
 
-// Example action triggered by voice command
-  private triggerHelloAction() {
+  public async startRealtimeAiApiSession() {
     console.log('Action triggered for "Hello" command');
+    await this.injectAudioFromSpeech("Starting the realtime session")
     // Implement your specific action here
+    let emp_token = await this.getEmpToken()
+    const EPHEMERAL_KEY = emp_token.client_secret.value;
+    console.log(`EPHEMERAL_KEY : ${EPHEMERAL_KEY}`)
+    const pc = new RTCPeerConnection();
+
+    // Reference the existing audio-1 element and cast it to HTMLAudioElement
+    const audioEl = document.getElementById("audio-1") as HTMLAudioElement;
+    if (!audioEl) {
+      console.error("Audio element not found!");
+      return;
+    }
+
+    pc.ontrack = e => {
+      audioEl.srcObject = e.streams[0]; // Play the incoming stream to the audio-1 element
+    };
+
+    // Add local audio track for microphone input in the browser
+    const ms = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    });
+
+    audioEl.srcObject = ms;
+    pc.addTrack(ms.getTracks()[0]);
+
+    // Set up data channel for sending and receiving events
+    const dc = pc.createDataChannel("oai-events");
+    dc.addEventListener("message", (e) => {
+      // Realtime server events appear here!
+      console.log(e);
+    });
+
+    // Start the session using the Session Description Protocol (SDP)
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    const baseUrl = "https://api.openai.com/v1/realtime";
+    const model = "gpt-4o-realtime-preview-2024-12-17";
+    const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+      method: "POST",
+      body: offer.sdp,
+      headers: {
+        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+        "Content-Type": "application/sdp"
+      },
+    });
+
+    const answer: RTCSessionDescriptionInit = {
+      type: "answer",
+      sdp: await sdpResponse.text(),
+    };
+
+    await pc.setRemoteDescription(answer);
   }
+
+
+
 
   private triggerStartAction() {
     console.log('Action triggered for "Start" command');
@@ -666,7 +722,7 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     console.log("Leaving injectAudioOnceFromPath");
   }
 
-  public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 1, pitch: number = 1): Promise<void> {
+  public async injectAudioFromSpeech(text: string, language: string = 'en-US', volume: number = 1, rate: number = 0.5, pitch: number = 1): Promise<void> {
     console.log("Entering injectAudioFromSpeech");
 
     // Create a new SpeechSynthesisUtterance object for the provided text
@@ -686,9 +742,6 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
 
     // Create an AudioNode that will play the speech
     const source = audioContext.createBufferSource();
-
-    // Use the SpeechSynthesis API to speak the text and create a stream
-    const audioStream = new MediaStream();
 
     // When the utterance is spoken, route the audio into the stream
     utterance.onstart = () => {
@@ -789,6 +842,37 @@ export class MeetMediaApiClientImpl implements MeetMediaApiClient {
     this._audioWebSocket = socket;
     this._audioProcessor = processor;
     this._audioContext = audioContext;
+  }
+
+  public async getEmpToken() {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is missing');
+    }
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-realtime-preview-2024-12-17",
+          voice: "verse",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data; // Handle the response data as needed
+
+    } catch (error) {
+      console.error('Error during session start:', error);
+      throw error; // Re-throw the error if needed for further handling
+    }
   }
 }
 
