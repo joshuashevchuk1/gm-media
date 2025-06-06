@@ -11,17 +11,17 @@ To run this project,
 
 go to web/src and run the following command
 
-install the latest webpack@5.99.9
+install the latest webpack@5.99.9, this step is required to get the project to work
 
 ```commandline
 npm install --save-dev webpack webpack-cli
 ```
 
-Then to install the project run the folliwng 
+Then to install the project run the following 
 
 ```commandline
 yarn install --frozen-lockfile
-webpack
+npx webpack
 npm start
 ```
 
