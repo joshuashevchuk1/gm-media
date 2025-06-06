@@ -21,4 +21,7 @@ might need to do
 
 ```commandline
 npm i
-``
+``` 
+
+Once running successfully you should be able to access your bots ui at localhost:9720
+
