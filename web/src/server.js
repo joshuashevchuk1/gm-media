@@ -28,5 +28,5 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(9720, () => {
-  console.log('Server successfully running on port 8080');
+  console.log('Server successfully running on port 9720');
 });
