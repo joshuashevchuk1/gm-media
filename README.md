@@ -9,3 +9,9 @@ yarn install --frozen-lockfile
 webpack
 npm start
 ```
+
+might need to do 
+
+```commandline
+npm i
+```
