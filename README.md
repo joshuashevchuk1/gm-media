@@ -11,6 +11,14 @@ To run this project,
 
 go to web/src and run the following command
 
+install the latest webpack@5.99.9
+
+```commandline
+npm install --save-dev webpack webpack-cli
+```
+
+Then to install the project run the folliwng 
+
 ```commandline
 yarn install --frozen-lockfile
 webpack
