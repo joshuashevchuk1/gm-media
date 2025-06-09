@@ -34,7 +34,8 @@ npm i
 make sure the index.html is copied into dist
 
 Once running successfully you should be able to access your bots ui at localhost:9720
- 
+
+// 715691994908-8b6i1pu8aqdfknthdhhvuuk7l9nbasmm.apps.googleusercontent.com
 0. enter client-id 715691994908-8b6i1pu8aqdfknthdhhvuuk7l9nbasmm.apps.googleusercontent.com
 1. enter meet key
 2. login
